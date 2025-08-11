@@ -5,7 +5,6 @@
 This project requires [Bun](https://bun.sh/) (a fast JavaScript runtime).  
 If you don't have Bun installed, follow the instructions at [https://bun.sh/docs/installation](https://bun.sh/docs/installation):
 
-
 ## Quick Start
 
 ```bash
@@ -35,9 +34,9 @@ The crawler generates:
 
 1. **Console output**: Real-time progress and final results
 2. **TSV file**: Stored in the `outputs` folder using as file name the website base url + timestamp with columns:
-   - URL
-   - Depth (0 = root page)
-   - Same-domain link ratio (0.0 to 1.0)
+   - Url
+   - depth (0 = root page)
+   - ratio (0.0 to 1.0, same-domain link ratio)
 
 ## Features
 
