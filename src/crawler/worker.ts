@@ -4,6 +4,7 @@ import { isSameDomain } from "../utils/url.js";
 import { fetchPage } from "../utils/http.js";
 import { extractLinks } from "../utils/html.js";
 import { calculateRatio } from "../output/tsv.js";
+import { workerLogger } from "../utils/logger.js";
 
 /**
  * Worker thread implementation for parallel web crawling
@@ -54,7 +55,15 @@ class CrawlerWorker {
 
       return true;
     } catch (error) {
-      console.error(`Error processing ${url}:`, error);
+      workerLogger.error(
+        {
+          url,
+          depth,
+          workerId: this.task.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "Error processing page in worker"
+      );
       return false;
     }
   }
@@ -64,7 +73,14 @@ class CrawlerWorker {
    */
   async processUrls(): Promise<WorkerResult> {
     try {
-      console.log(`Worker processing ${this.task.urls.length} URLs`);
+      workerLogger.info(
+        {
+          workerId: this.task.id,
+          urlCount: this.task.urls.length,
+          maxDepth: this.task.maxDepth,
+        },
+        "Worker processing URLs"
+      );
 
       // Process all URLs in parallel
       const promises = this.task.urls.map(({ url, depth }) =>
@@ -79,6 +95,13 @@ class CrawlerWorker {
         newUrls: this.newUrls,
       };
     } catch (error) {
+      workerLogger.error(
+        {
+          workerId: this.task.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "Worker task failed"
+      );
       return {
         taskId: this.task.id,
         results: this.results,
@@ -100,6 +123,13 @@ if (!isMainThread && parentPort) {
       parentPort!.postMessage(result);
     })
     .catch((error) => {
+      workerLogger.error(
+        {
+          workerId: task.id,
+          error: error.message,
+        },
+        "Worker thread failed"
+      );
       parentPort!.postMessage({
         taskId: task.id,
         results: [],
