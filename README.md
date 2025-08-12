@@ -100,6 +100,10 @@ See [`TEST_COVERAGE.md`](./TEST_COVERAGE.md) for detailed coverage information.
 
 ## Code Architecture
 
+The following diagram illustrates the application logic and flow:
+
+![Web Crawler Logic Flow](./mermaid-diagram-2025-08-12-042747.png)
+
 The crawler is organized into focused modules:
 
 ```
