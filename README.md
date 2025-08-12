@@ -48,8 +48,9 @@ bun run index.ts https://en.wikipedia.org/wiki/Main_Page 3
 
 The crawler generates:
 
-1. **Console output**: Real-time progress, final results, and performance metrics
-2. **TSV file**: Stored in the `outputs` folder using as file name the website base url + timestamp with columns:
+1. **Structured JSON logs**: Real-time progress with Pino structured logging for monitoring
+2. **Console output**: Summary results and performance metrics
+3. **TSV file**: Stored in the `outputs` folder using as file name the website base url + timestamp with columns:
    - Url
    - depth (0 = root page)
    - ratio (0.0 to 1.0, same-domain link ratio)
@@ -77,7 +78,7 @@ bun test --watch
 
 - **Types**: Interface validation and compatibility tests
 - **URL utilities**: Domain checking, URL validation, and resolution
-- **HTML parsing**: Link extraction with JSDOM and regex fallback
+- **HTML parsing**: Link extraction with Cheerio and regex fallback
 - **HTTP handling**: Request management, timeouts, and error handling
 - **Output generation**: TSV formatting and filename generation
 - **Core crawler**: Constructor, configuration, and basic crawling logic
@@ -97,6 +98,8 @@ See [`TEST_COVERAGE.md`](./TEST_COVERAGE.md) for detailed coverage information.
 - ✅ **TSV output**: Tab-separated values for easy data processing
 - ✅ **Timeout protection**: 10-second timeout per page request
 - ✅ **Modular architecture**: Well-organized code structure for easy maintenance
+- ✅ **Structured logging**: Enterprise-grade JSON logging with Pino for monitoring and debugging
+- ✅ **Fast HTML parsing**: Uses Cheerio for efficient link extraction (3-5x faster than JSDOM)
 
 ## Code Architecture
 
@@ -113,7 +116,8 @@ src/
 ├── utils/                      # Utility functions
 │   ├── url.ts                 # URL validation and domain checking
 │   ├── http.ts                # HTTP fetching with error handling
-│   ├── html.ts                # HTML parsing and link extraction
+│   ├── html.ts                # HTML parsing and link extraction (Cheerio)
+│   ├── logger.ts              # Structured logging configuration (Pino)
 │   └── system.ts              # CPU core detection and worker management
 ├── crawler/                    # Crawling engines
 │   ├── crawler.ts             # Single-threaded crawler (fallback)
@@ -158,6 +162,67 @@ This modular structure makes it easy to:
 - **Add new features** like different output formats or crawling strategies
 - **Test individual components** in isolation
 - **Understand the codebase** with clear separation of concerns
+
+## Structured Logging
+
+The crawler uses **Pino** for enterprise-grade structured JSON logging with different log levels and component-specific loggers:
+
+### Log Levels by Environment
+
+- **Test**: Only `WARN` and `ERROR` (clean test output)
+- **Development**: `DEBUG` and above (full visibility)
+- **Production**: `INFO` and above (balanced monitoring)
+
+### Component Loggers
+
+- **HTTP Logger**: Request/response details, timeouts, errors
+- **Crawler Logger**: Crawl progress, page processing, performance metrics
+- **Worker Logger**: Worker thread lifecycle and task processing
+- **HTML Logger**: Link extraction and parsing issues
+- **System Logger**: CPU detection and worker management
+
+### Sample Log Output
+
+```json
+{
+  "level": 30,
+  "time": 1754987640348,
+  "service": "web-crawler",
+  "version": "1.0.0",
+  "component": "http",
+  "url": "https://example.com",
+  "status": 200,
+  "msg": "Page fetched successfully"
+}
+```
+
+### Log Analysis
+
+```bash
+# Filter by component
+node crawler.js | jq 'select(.component == "http")'
+
+# Show only errors and warnings
+node crawler.js | jq 'select(.level >= 40)'
+
+# Monitor worker performance
+node crawler.js | jq 'select(.workerId)'
+```
+
+This structured approach enables:
+
+- **Production monitoring** with log aggregation systems
+- **Performance analysis** through structured metrics
+- **Debugging** with rich contextual information
+- **Clean testing** with appropriate log level filtering
+
+## Technology Stack
+
+- **Runtime**: [Bun](https://bun.sh/) - Fast JavaScript runtime and package manager
+- **HTML Parsing**: [Cheerio](https://cheerio.js.org/) - Server-side jQuery-like HTML parsing (3-5x faster than JSDOM)
+- **Logging**: [Pino](https://getpino.io/) - High-performance structured JSON logging
+- **Concurrency**: Node.js Worker Threads for true parallel processing
+- **TypeScript**: Full type safety and modern JavaScript features
 
 ## Same-Domain Logic
 

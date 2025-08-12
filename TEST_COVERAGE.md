@@ -31,10 +31,10 @@ This project now has comprehensive unit test coverage with **96 tests** covering
 ### 3. HTML Utilities (`src/utils/__tests__/html.test.ts`)
 
 - **13 tests** covering HTML parsing and link extraction
-- `extractLinks`: Link extraction from HTML with JSDOM and regex fallback
+- `extractLinks`: Link extraction from HTML with Cheerio and regex fallback
 - Malformed HTML handling
 - Special characters, duplicate links, and large documents
-- Fallback mechanism when JSDOM fails
+- Fallback mechanism when Cheerio fails
 
 ### 4. HTTP Utilities (`src/utils/__tests__/http.test.ts`)
 
