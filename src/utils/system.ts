@@ -1,4 +1,5 @@
 import { cpus } from "os";
+import { systemLogger } from "./logger.js";
 
 /**
  * Get the number of CPU cores available on the system
@@ -14,7 +15,7 @@ export function getCpuCoreCount(): number {
  */
 export function getOptimalWorkerCount(maxWorkers?: number): number {
   const cpuCores = getCpuCoreCount();
-  console.log(`System has ${cpuCores} CPU cores available`);
+  systemLogger.info(`System has ${cpuCores} CPU cores available`);
 
   // Use all cores minus 1 to keep one core free for the main process
   // or use the specified maxWorkers if provided
@@ -23,6 +24,8 @@ export function getOptimalWorkerCount(maxWorkers?: number): number {
     cpuCores
   );
 
-  console.log(`Using ${optimalWorkers} worker threads for parallel processing`);
+  systemLogger.info(
+    `Using ${optimalWorkers} worker threads for parallel processing`
+  );
   return optimalWorkers;
 }

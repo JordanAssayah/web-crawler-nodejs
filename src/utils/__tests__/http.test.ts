@@ -88,14 +88,7 @@ describe("HTTP Utilities", () => {
         statusText: "Not Found",
       });
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://example.com/nonexistent");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -111,14 +104,7 @@ describe("HTTP Utilities", () => {
         },
       });
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://example.com/api/data");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -131,14 +117,7 @@ describe("HTTP Utilities", () => {
         },
       });
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://example.com");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -146,14 +125,7 @@ describe("HTTP Utilities", () => {
     it("should handle network errors gracefully", async () => {
       mockFetch.mockRejectedValue(new Error("Network error"));
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://unreachable.com");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -163,14 +135,7 @@ describe("HTTP Utilities", () => {
         new DOMException("The operation was aborted", "AbortError")
       );
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://slow.com");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -185,10 +150,6 @@ describe("HTTP Utilities", () => {
         "https://example.com/style.css",
       ];
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       for (const url of fileUrls) {
         const result = await fetchPage(url);
         expect(result).toBe(null);
@@ -197,9 +158,6 @@ describe("HTTP Utilities", () => {
           expect.any(Object)
         );
       }
-
-      // Restore console.error
-      console.error = originalConsoleError;
     });
 
     it("should crawl HTML-like file extensions", async () => {
@@ -291,14 +249,7 @@ describe("HTTP Utilities", () => {
         ),
       });
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const result = await fetchPage("https://example.com");
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       expect(result).toBe(null);
     });
@@ -366,18 +317,11 @@ describe("HTTP Utilities", () => {
         "https://example.com/feed.rss",
       ];
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       for (const url of fileTypes) {
         const result = await fetchPage(url);
         expect(result).toBe(null);
         expect(mockFetch).not.toHaveBeenCalledWith(url, expect.any(Object));
       }
-
-      // Restore console.error
-      console.error = originalConsoleError;
     });
 
     it("should handle case-insensitive file extensions", async () => {
@@ -388,18 +332,11 @@ describe("HTTP Utilities", () => {
         "https://example.com/Style.CSS",
       ];
 
-      // Suppress console.error during this test
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       for (const url of mixedCaseUrls) {
         const result = await fetchPage(url);
         expect(result).toBe(null);
         expect(mockFetch).not.toHaveBeenCalledWith(url, expect.any(Object));
       }
-
-      // Restore console.error
-      console.error = originalConsoleError;
     });
   });
 });

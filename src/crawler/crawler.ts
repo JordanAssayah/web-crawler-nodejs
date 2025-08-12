@@ -3,6 +3,7 @@ import { isSameDomain } from "../utils/url.js";
 import { fetchPage } from "../utils/http.js";
 import { extractLinks } from "../utils/html.js";
 import { calculateRatio } from "../output/tsv.js";
+import { crawlerLogger } from "../utils/logger.js";
 
 export class WebCrawler {
   private rootUrl: string;
@@ -41,8 +42,14 @@ export class WebCrawler {
    * Main crawling logic with parallel processing
    */
   async crawl(): Promise<CrawlResult[]> {
-    console.log(
-      `Starting crawl from ${this.rootUrl} with max depth ${this.maxDepth}`
+    crawlerLogger.info(
+      {
+        rootUrl: this.rootUrl,
+        maxDepth: this.maxDepth,
+        batchSize: this.batchSize,
+        timeout: this.timeout,
+      },
+      "Starting single-threaded web crawl"
     );
 
     const queue: Array<{ url: string; depth: number }> = [
@@ -63,7 +70,14 @@ export class WebCrawler {
 
       const results = await Promise.all(promises);
 
-      console.log(`\nProcessing batch of ${results.length} pages`);
+      crawlerLogger.info(
+        {
+          batchSize: results.length,
+          queueLength: queue.length,
+          totalProcessed: this.results.length,
+        },
+        "Processing batch"
+      );
       for (const pageData of results) {
         if (!pageData) continue;
 
@@ -73,8 +87,14 @@ export class WebCrawler {
         );
 
         this.results.push({ url, depth, ratio });
-        console.log(
-          `Processed: ${url} (depth: ${depth}, ratio: ${ratio.toFixed(3)})`
+        crawlerLogger.debug(
+          {
+            url,
+            depth,
+            ratio: Number(ratio.toFixed(3)),
+            linksFound: links.length,
+          },
+          "Page processed"
         );
 
         // Add new URLs to queue if we haven't reached max depth
@@ -88,7 +108,14 @@ export class WebCrawler {
       }
     }
 
-    console.log(`Crawl completed. Processed ${this.results.length} pages.`);
+    crawlerLogger.info(
+      {
+        totalPages: this.results.length,
+        rootUrl: this.rootUrl,
+        maxDepth: this.maxDepth,
+      },
+      "Single-threaded crawl completed"
+    );
     return this.results;
   }
 

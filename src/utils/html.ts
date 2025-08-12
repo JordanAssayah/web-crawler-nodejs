@@ -1,47 +1,29 @@
 /**
- * HTML parsing utilities for extracting links
- * Overall Flow
-Try JSDOM with virtual console to suppress CSS errors
-If JSDOM fails → catch specific error types → use regex fallback
-If everything fails → log error and return empty array
-Never crash the crawler due to problematic HTML
+ * HTML parsing utilities for extracting links using Cheerio
+ * Cheerio is much faster and lighter than JSDOM for static HTML parsing
  */
 
-import { JSDOM, VirtualConsole } from "jsdom";
+import * as cheerio from "cheerio";
 import { resolveUrl } from "./url.js";
+import { htmlLogger } from "./logger.js";
 
 /**
- * Extract all links from HTML content
+ * Extract all links from HTML content using Cheerio
+ * Much faster and more efficient than JSDOM for link extraction
  */
 export function extractLinks(html: string, baseUrl: string): string[] {
   try {
-    // Create a virtual console to handle JSDOM errors gracefully
-    // You can check the following link for more information on virtual consoles and how to use them
-    // https://github.com/jsdom/jsdom?tab=readme-ov-file#virtual-consoles
-    const virtualConsole = new VirtualConsole();
-
-    // Suppress CSS parsing errors and other non-critical errors
-    virtualConsole.on("error", (error: Error) => {
-      // Only log errors that aren't CSS-related
-      if (!error.message.includes("Could not parse CSS")) {
-        console.error("JSDOM Error:", error.message);
-      }
+    // Load HTML with Cheerio - much faster than JSDOM
+    const $ = cheerio.load(html, {
+      // Configure for performance and error tolerance
+      xml: false, // Parse as HTML, not XML
     });
-
-    const dom = new JSDOM(html, {
-      virtualConsole,
-      // Minimal configuration to avoid VM context and other JSDOM errors
-      resources: "usable",
-      runScripts: "outside-only",
-      pretendToBeVisual: false,
-    });
-    const document = dom.window.document;
-    const linkElements = document.querySelectorAll("a[href]");
 
     const links: string[] = [];
 
-    linkElements.forEach((element) => {
-      const href = element.getAttribute("href");
+    // Extract all href attributes from anchor tags
+    $("a[href]").each((_, element) => {
+      const href = $(element).attr("href");
       if (href) {
         const absoluteUrl = resolveUrl(href, baseUrl);
         if (absoluteUrl) {
@@ -52,38 +34,17 @@ export function extractLinks(html: string, baseUrl: string): string[] {
 
     return links;
   } catch (error) {
-    // Handle various JSDOM errors more gracefully
-    if (error instanceof Error) {
-      // CSS parsing errors
-      if (error.message.includes("Could not parse CSS")) {
-        console.warn(
-          `CSS parsing error ignored for ${baseUrl}: continuing with link extraction`
-        );
-        return extractLinksWithRegex(html, baseUrl);
-      }
-
-      // JSDOM VM context errors
-      if (
-        error.message.includes(
-          "context parameter must be a contextified object"
-        ) ||
-        error.message.includes("contextified") ||
-        error.stack?.includes("Window.js")
-      ) {
-        console.warn(
-          `JSDOM initialization error for ${baseUrl}: falling back to regex extraction`
-        );
-        return extractLinksWithRegex(html, baseUrl);
-      }
-    }
-
-    console.error(`Error parsing HTML from ${baseUrl}:`, error);
-    return [];
+    htmlLogger.error(
+      { baseUrl, error: (error as Error).message },
+      "Error parsing HTML"
+    );
+    // Fallback to regex if Cheerio fails (very unlikely)
+    return extractLinksWithRegex(html, baseUrl);
   }
 }
 
 /**
- * Fallback method to extract links using regex when JSDOM fails
+ * Fallback method to extract links using regex when parsing fails
  */
 function extractLinksWithRegex(html: string, baseUrl: string): string[] {
   const links: string[] = [];

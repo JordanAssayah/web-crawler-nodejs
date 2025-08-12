@@ -9,6 +9,7 @@ import type {
 } from "../types/index.js";
 import { getOptimalWorkerCount } from "../utils/system.js";
 import { isSameDomain } from "../utils/url.js";
+import { parallelCrawlerLogger } from "../utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -111,9 +112,13 @@ export class ParallelWebCrawler {
 
     for (const workerResult of workerResults) {
       if (workerResult.error) {
-        console.error(
-          `Worker ${workerResult.taskId} error:`,
-          workerResult.error
+        parallelCrawlerLogger.error(
+          {
+            workerId: workerResult.taskId,
+            error: workerResult.error,
+            resultsCount: workerResult.results.length,
+          },
+          "Worker completed with error"
         );
         continue;
       }
@@ -132,8 +137,13 @@ export class ParallelWebCrawler {
         }
       }
 
-      console.log(
-        `Worker ${workerResult.taskId} completed: ${workerResult.results.length} pages processed`
+      parallelCrawlerLogger.info(
+        {
+          workerId: workerResult.taskId,
+          pagesProcessed: workerResult.results.length,
+          newUrlsFound: workerResult.newUrls.length,
+        },
+        "Worker completed successfully"
       );
     }
 
@@ -144,11 +154,14 @@ export class ParallelWebCrawler {
    * Main crawling logic with parallel worker processing
    */
   async crawl(): Promise<CrawlResult[]> {
-    console.log(
-      `Starting parallel crawl from ${this.rootUrl} with max depth ${this.maxDepth}`
-    );
-    console.log(
-      `Using ${this.maxWorkers} worker threads for parallel processing`
+    parallelCrawlerLogger.info(
+      {
+        rootUrl: this.rootUrl,
+        maxDepth: this.maxDepth,
+        maxWorkers: this.maxWorkers,
+        timeout: this.timeout,
+      },
+      "Starting parallel web crawl"
     );
 
     let currentUrls: Array<{ url: string; depth: number }> = [
@@ -158,12 +171,17 @@ export class ParallelWebCrawler {
     this.visited.add(this.rootUrl);
 
     while (currentUrls.length > 0) {
-      console.log(
-        `\n=== Processing ${currentUrls.length} URLs in parallel ===`
-      );
-
       // Distribute URLs among workers
       const tasks = this.distributeUrls(currentUrls);
+
+      parallelCrawlerLogger.info(
+        {
+          urlCount: currentUrls.length,
+          workerCount: tasks.length,
+          iteration: this.results.length > 0 ? "continuing" : "initial",
+        },
+        "Processing URLs in parallel"
+      );
 
       if (tasks.length === 0) break;
 
@@ -174,15 +192,34 @@ export class ParallelWebCrawler {
         // Process results and get new URLs for next iteration
         currentUrls = this.processWorkerResults(workerResults);
 
-        console.log(`Found ${currentUrls.length} new URLs for next iteration`);
+        parallelCrawlerLogger.info(
+          {
+            newUrlsFound: currentUrls.length,
+            totalProcessed: this.results.length,
+          },
+          "Iteration completed"
+        );
       } catch (error) {
-        console.error("Error during parallel processing:", error);
+        parallelCrawlerLogger.error(
+          {
+            error: error instanceof Error ? error.message : String(error),
+            currentUrlsCount: currentUrls.length,
+            totalProcessed: this.results.length,
+          },
+          "Error during parallel processing"
+        );
         break;
       }
     }
 
-    console.log(
-      `\nParallel crawl completed. Processed ${this.results.length} pages total.`
+    parallelCrawlerLogger.info(
+      {
+        totalPages: this.results.length,
+        rootUrl: this.rootUrl,
+        maxDepth: this.maxDepth,
+        workersUsed: this.maxWorkers,
+      },
+      "Parallel crawl completed"
     );
     return this.results;
   }

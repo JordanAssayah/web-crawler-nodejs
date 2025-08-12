@@ -66,15 +66,8 @@ describe("WebCrawler", () => {
         maxDepth: 0,
       };
 
-      // Suppress console.error during this test to avoid noise
-      const originalConsoleError = console.error;
-      console.error = () => {};
-
       const crawler = new WebCrawler(options);
       const results = await crawler.crawl();
-
-      // Restore console.error
-      console.error = originalConsoleError;
 
       // Should not crash and return empty results for invalid URLs
       expect(results).toEqual([]);
